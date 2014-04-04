@@ -3,7 +3,7 @@
 # This file is part of Pesky.  Pesky is BSD-licensed software;
 # for copyright information see the LICENSE file.
 
-import os, sys, getopt, datetime
+import os, sys, getopt, datetime, shlex
 from ConfigParser import RawConfigParser
 
 from pesky.settings.errors import ConfigureError
@@ -128,7 +128,7 @@ class Section(object):
             return default
         return os.path.normpath(os.path.join(self._cwd, path))
 
-    def get_list(self, name, opttype, default=None, delimiter=','):
+    def get_list(self, name, default=None, coerce=str):
         """
         Returns the configuration value associated with the specified `name`,
         coerced into a list of values with the specified `type`.  If
@@ -140,12 +140,10 @@ class Section(object):
 
         :param name: The configuration setting name.
         :type name: str
-        :param opttype: The type of each option element in the list.
-        :type name: classtype
         :param default: The value to return if a value is not found.
-        :param delimiter: The delimiter which separates values in the list.
-        :type delimiter: str
-        :returns: The string value, or the default value.
+        :param coerce: The coercion function to apply to each value
+        :type name: callable
+        :returns: a list of coerced values, or the default value.
         """
         if self.name == None or not self._options.has_option(self.name, name):
             return default
@@ -153,12 +151,25 @@ class Section(object):
         if l == None:
             return default
         try:
-            return [opttype(e.strip()) for e in l.split(delimiter)]
+            return map(coerce, shlex.split(l))
         except Exception, e:
             raise ConfigureError("failed to parse configuration item [%s]=>%s: %s" % (
                 self.name, name, e))
 
     def get_timedelta(self, name, default=None):
+        """
+        Returns the configuration value associated with the specified name,
+        coerced into a timedelta.  If there is no configuration value in the
+        section called `name`, then return the value specified by `default`.
+        Note that `default` is returned unmodified (i.e. not coerced into a
+        timedelta).  This makes it easy to detect if a configuration value
+        is not present by setting `default` to None.
+
+        :param name: The configuration setting name.
+        :type name: str
+        :param default: The value to return if a value is not found.
+        :returns: The timedelta value, or the default value.
+        """
         if self.name == None or not self._options.has_option(self.name, name):
             return default
         string = self._options.get(self.name, name)

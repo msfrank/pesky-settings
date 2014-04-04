@@ -6,6 +6,7 @@
 import os, sys, getopt, datetime
 from ConfigParser import RawConfigParser
 
+from pesky.settings.option import *
 from pesky.settings.errors import ConfigureError
 
 class Parser(object):

@@ -6,6 +6,7 @@
 import os, sys, getopt, datetime
 from ConfigParser import RawConfigParser
 
+from pesky.settings.section import Section
 from pesky.settings.errors import ConfigureError
 
 class Namespace(object):

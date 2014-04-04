@@ -6,6 +6,8 @@
 import os, sys, getopt, datetime
 from ConfigParser import RawConfigParser
 
+from pesky.settings.parser import Parser
+from pesky.settings.namespace import Namespace
 from pesky.settings.errors import ConfigureError
 
 class Settings(Parser):
@@ -28,7 +30,7 @@ class Settings(Parser):
         self._confbase = os.path.abspath(confbase)
         self._cwd = os.getcwd()
         Parser.__init__(self, None, self._section, version, usage, description, subusage)
-        self.addOption('c', 'config-file', 'config file',
+        self.add_option('c', 'config-file', 'config file',
             section=self._section, help="Load configuration from FILE", metavar="FILE"
             )
 
@@ -58,13 +60,11 @@ class Settings(Parser):
             path = os.path.normpath(os.path.join(self._cwd, config_file))
             with open(path, 'r') as f:
                 options.readfp(f, path)
-            logger.debug("loaded settings from %s", path)
         except getopt.GetoptError, e:
             raise ConfigureError(str(e))
         except EnvironmentError, e:
             if needsconfig:
                 raise ConfigureError("failed to read configuration: %s", e.strerror)
-            logger.info("didn't load configuration: %s", e.strerror)
         # merge command line settings with config file settings
         for section in overrides.sections():
             for name,value in overrides.items(section):

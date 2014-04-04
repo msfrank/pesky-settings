@@ -10,3 +10,6 @@ def versionstring():
     Return the version number as a string.
     """
     return "%i.%i.%i" % __version__
+
+from pesky.settings.settings import Settings
+from pesky.settings.errors import ConfigureError
