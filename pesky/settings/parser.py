@@ -176,7 +176,7 @@ class Parser(object):
         commands = []
         c = self
         while c != None:
-            commands = [c.name] + commands
+            commands.insert(0, c.name)
             c = c._parent
         print "Usage: %s %s" % (' '.join(commands), self.usage)
         print 

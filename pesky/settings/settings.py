@@ -29,7 +29,7 @@ class Settings(Parser):
         self._section = self.appname if section is None else section
         self._confbase = os.path.abspath(confbase)
         self._cwd = os.getcwd()
-        Parser.__init__(self, None, self._section, version, usage, description, subusage)
+        Parser.__init__(self, None, self.appname, version, usage, description, subusage)
         self.add_option('c', 'config-file', 'config file',
             section=self._section, help="Load configuration from FILE", metavar="FILE"
             )

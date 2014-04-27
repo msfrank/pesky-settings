@@ -28,9 +28,9 @@ class ActionBase(object):
 class ActionMap(ActionBase):
     """
     """
-    def __init__(self, usage, version, description, section=None, options=None, actions=None):
+    def __init__(self, usage, version, description, section=None, appname=None, confbase='/etc/', options=None, actions=None):
         ActionBase.__init__(self)
-        self.settings = Settings(usage, version, description, section=section)
+        self.settings = Settings(usage, version, description, section=section, appname=appname, confbase=confbase)
         self.options = list() if options is None else options
         self.actions = list() if actions is None else actions
         self.callback = None
