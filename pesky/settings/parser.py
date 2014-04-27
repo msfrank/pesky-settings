@@ -22,13 +22,14 @@ class Parser(object):
     :param subusage:
     :type subusage: str
     """
-    def __init__(self, parent, name, version, usage, description, subusage):
+    def __init__(self, parent, name, version, usage, description, subusage, section):
         self._parent = parent
         self.name = name
         self.version = version
         self.usage = usage
         self.description = description
         self.subusage = subusage
+        self.section = section
         self._subcommands = {}
         self._options = {}
         self._optslist = []
@@ -49,7 +50,7 @@ class Parser(object):
         if name in self._subcommands:
             raise ConfigureError("subcommand '%s' is already defined" % name)
         version = version if version is not None else self.version
-        subcommand = Parser(self, name, version, usage, description, subusage)
+        subcommand = Parser(self, name, version, usage, description, subusage, None)
         self._subcommands[name] = subcommand
         return subcommand
 
@@ -57,7 +58,8 @@ class Parser(object):
         sections = list()
         parser = self
         while parser is not None:
-            sections.insert(0, parser.name)
+            name = self.section if self.section is not None else self.name
+            sections.insert(0, name)
             parser = parser._parent
         return ':'.join(sections)
 
