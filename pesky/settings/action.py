@@ -31,8 +31,14 @@ class ActionMap(ActionBase):
     def __init__(self, usage, version, description, section=None, appname=None, confbase='/etc/', options=None, actions=None):
         ActionBase.__init__(self)
         self.settings = Settings(usage, version, description, section=section, appname=appname, confbase=confbase)
-        self.options = list() if options is None else options
-        self.actions = list() if actions is None else actions
+        if options is None:
+            self.options = list()
+        else:
+            self.options = options
+        if actions is None:
+            self.actions = list()
+        else:
+            self.actions = actions
         self.callback = None
         self._init(self.settings, self.options, self.actions)
 
@@ -59,5 +65,11 @@ class Action(ActionBase):
         self.callback = callback
         self.usage = usage
         self.description = description
-        self.options = list() if options is None else options
-        self.actions = list() if actions is None else actions
+        if options is None:
+            self.options = list()
+        else:
+            self.options = options
+        if actions is None:
+            self.actions = list()
+        else:
+            self.actions = actions

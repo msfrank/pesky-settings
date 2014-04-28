@@ -49,7 +49,8 @@ class Parser(object):
         """
         if name in self._subcommands:
             raise ConfigureError("subcommand '%s' is already defined" % name)
-        version = version if version is not None else self.version
+        if version is None:
+            version = self.version
         subcommand = Parser(self, name, version, usage, description, subusage, None)
         self._subcommands[name] = subcommand
         return subcommand
@@ -58,7 +59,10 @@ class Parser(object):
         sections = list()
         parser = self
         while parser is not None:
-            name = self.section if self.section is not None else self.name
+            if parser.section is not None:
+                name = parser.section
+            else:
+                name = parser.name
             sections.insert(0, name)
             parser = parser._parent
         return ':'.join(sections)
@@ -146,19 +150,18 @@ class Parser(object):
             opts,args = getopt.gnu_getopt(argv, shortnames, longnames)
         else:
             opts,args = getopt.getopt(argv, shortnames, longnames)
+        seen = set()
         for opt,value in opts:
             if opt == '--help': self._usage()
             if opt == '--version': self._version()
             o = self._options[opt]
+            if o in seen:
+                if not o.recurring:
+                    raise ConfigureError("%s is not a recurring option")
+                seen.add(o)
             if not store.has_section(o.section):
                 store.add_section(o.section)
-            if isinstance(o, Switch):
-                if o.reverse == True:
-                    store.set(o.section, o.override, 'false')
-                else:
-                    store.set(o.section, o.override, 'true')
-            elif isinstance(o, Option):
-                store.set(o.section, o.override, value)
+            o.set(store, value)
         if len(self._subcommands) > 0:
             if len(args) == 0:
                 raise ConfigureError("no subcommand specified")

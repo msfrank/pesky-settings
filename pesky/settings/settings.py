@@ -25,8 +25,14 @@ class Settings(Parser):
         :param subusage: If subcommands are specified, then display this message above
         :type subusage: str
         """
-        self.appname = appname if appname is not None else os.path.basename(sys.argv[0])
-        self._section = self.appname if section is None else section
+        if appname is not None:
+            self.appname = appname
+        else:
+            self.appname = os.path.basename(sys.argv[0])
+        if section is not None:
+            self._section = section
+        else:
+            self._section = self.appname
         self._confbase = os.path.abspath(confbase)
         self._cwd = os.getcwd()
         Parser.__init__(self, None, self.appname, version, usage, description, subusage, self._section)
@@ -50,7 +56,8 @@ class Settings(Parser):
         args = list()
         overrides = RawConfigParser()
         try:
-            argv = argv if argv is not None else sys.argv
+            if argv is None:
+                argv = sys.argv
             overrides.add_section(self._section)
             overrides.set(self._section, 'config file', os.path.join(self._confbase, "%s.conf" % self.appname))
             # parse command line arguments

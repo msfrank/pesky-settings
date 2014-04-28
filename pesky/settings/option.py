@@ -3,14 +3,11 @@
 # This file is part of Pesky.  Pesky is BSD-licensed software;
 # for copyright information see the LICENSE file.
 
-import os, sys, getopt, datetime
-from ConfigParser import RawConfigParser
-
 class Option(object):
     """
     A command line option.
     """
-    def __init__(self, shortname, longname, override, section=None, help=None, metavar=None):
+    def __init__(self, shortname, longname, override, section=None, help=None, metavar=None, recurring=False):
         self.shortname = shortname
         self.shortident = "%s:" % shortname
         self.longname = longname
@@ -22,6 +19,12 @@ class Option(object):
             self.metavar = metavar
         else:
             self.metavar = 'VALUE'
+        self.recurring = recurring
+
+    def set(self, store, value):
+        """
+        """
+        store.set(self.section, self.override, value)
 
 class ShortOption(Option):
     """
@@ -46,6 +49,15 @@ class Switch(Option):
         self.shortident = shortname
         self.longident = longname
         self.reverse = reverse
+
+    def set(self, store, value):
+        """
+        """
+        if self.reverse == False:
+            value = 'true'
+        else:
+            value = 'false'
+        store.set(self.section, self.override, value)
 
 class ShortSwitch(Switch):
     """
