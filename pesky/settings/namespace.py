@@ -76,11 +76,11 @@ class Namespace(object):
             names = None
         if maximum != None and len(self._args) > maximum:
             raise ConfigureError("extra trailing arguments")
-        args = [None for _ in range(len(spec))]
+        args = self._args[:]
         for i in range(len(spec)):
             try:
                 validator = spec[i]
-                args[i] = validator(self._args[i])
+                args[i] = validator(args[i])
             except IndexError:
                 if minimum == None or i < minimum:
                     if names != None:
