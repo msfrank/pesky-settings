@@ -31,6 +31,7 @@ setup(
         "pesky",
         ],
     packages=[
+        "pesky",
         'pesky.settings',
         ],
     test_suite="test",
