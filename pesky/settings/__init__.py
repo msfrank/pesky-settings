@@ -3,7 +3,7 @@
 # This file is part of Pesky.  Pesky is BSD-licensed software;
 # for copyright information see the LICENSE file.
 
-__version__ = (0, 0, 2)
+__version__ = (0, 0, 3)
 
 def versionstring():
     """
