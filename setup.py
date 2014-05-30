@@ -4,12 +4,12 @@ from setuptools import setup
 
 # jump through some hoops to get access to versionstring()
 from sys import path
-from os.path import abspath, dirname
-path.insert(0, abspath(dirname(__file__)))
-from pesky.settings import versionstring
+from os.path import abspath, dirname, join
+topdir = abspath(dirname(__file__))
+exec(open(join(topdir, "pesky/settings/version.py"), "r").read())
 
-with open("README.rst", "r") as f:
-    readme = f.read()
+# load contents of README.rst
+readme = open("README.rst", "r").read()
     
 setup(
     # package description
