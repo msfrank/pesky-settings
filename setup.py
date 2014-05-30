@@ -19,6 +19,7 @@ setup(
     long_description=readme,
     author="Michael Frank",
     author_email="msfrank@syntaxockey.com",
+    url="https://github.com/msfrank/pesky-settings",
     # installation dependencies
     install_requires=[
         ],
