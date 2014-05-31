@@ -3,10 +3,8 @@
 # This file is part of Pesky.  Pesky is BSD-licensed software;
 # for copyright information see the LICENSE file.
 
-import os, sys, getopt, datetime
-from ConfigParser import RawConfigParser
-
 from pesky.settings.section import Section
+from pesky.settings.args import parse_args
 from pesky.settings.errors import ConfigureError
 
 class Namespace(object):
@@ -46,10 +44,11 @@ class Namespace(object):
 
     def get_args(self, *spec, **kwargs):
         """
-        Returns a list containing arguments conforming to *spec.  if the number of
-        command arguments is less than minimum or greater than maximum, or if any
-        argument cannot be validated, ConfigureError is raised.  Any optional arguments
-        which are not specified are set to None.
+        Returns a list containing command-line arguments conforming to *spec.
+        if the number of command arguments is less than minimum or greater
+        than maximum, or if any argument cannot be validated, ConfigureError
+        is raised.  Any optional arguments which are not specified are passed
+        unmodified.
 
         :param spec: a list of validator functions
         :type spec: [callable]
@@ -59,38 +58,10 @@ class Namespace(object):
         :type maxmimum: int
         :param names: a list of argument names corresponding to each validator
         :type names: [str]
-        :returns: a list containing arguments conforming to spec
+        :returns: a tuple containing arguments conforming to spec
         :rtype: [object]
         """
-        try:
-            minimum = kwargs['minimum']
-        except:
-            minimum = None
-        try:
-            maximum = kwargs['maximum']
-        except:
-            maximum = None
-        try:
-            names = kwargs['names']
-        except:
-            names = None
-        if maximum != None and len(self._args) > maximum:
-            raise ConfigureError("extra trailing arguments")
-        args = self._args[:]
-        for i in range(len(spec)):
-            try:
-                validator = spec[i]
-                args[i] = validator(args[i])
-            except IndexError:
-                if minimum == None or i < minimum:
-                    if names != None:
-                        raise ConfigureError("missing argument " + names[i])
-                    raise ConfigureError("missing argument")
-            except Exception, e:
-                if names != None:
-                    raise ConfigureError("failed to parse argument %s: %s" % (names[i], str(e)))
-                raise ConfigureError("failed to parse argument: %s" % str(e))
-        return args
+        return parse_args(self.args, *spec, **kwargs)
 
     def pop_stack(self):
         if len(self._stack) > 0:

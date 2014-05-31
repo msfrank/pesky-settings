@@ -3,9 +3,9 @@
 # This file is part of Pesky.  Pesky is BSD-licensed software;
 # for copyright information see the LICENSE file.
 
-import os, sys, getopt, datetime, shlex
-from ConfigParser import RawConfigParser
+import os, datetime, shlex
 
+from pesky.settings.args import parse_args
 from pesky.settings.errors import ConfigureError
 
 class Section(object):
@@ -155,6 +155,18 @@ class Section(object):
         except Exception, e:
             raise ConfigureError("failed to parse configuration item [%s]=>%s: %s" % (
                 self.name, name, e))
+
+    def get_args(self, name, *spec, **kwargs):
+        """
+        """
+        default = None
+        if 'default' in kwargs:
+            default = kwargs['default']
+            del kwargs['default']
+        if self.name == None or not self._options.has_option(self.name, name):
+            return default
+        args = shlex.split(self._options.get(self.name, name))
+        return parse_args(args, *spec, **kwargs)
 
     def get_timedelta(self, name, default=None):
         """
