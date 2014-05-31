@@ -212,6 +212,47 @@ class Section(object):
             raise ConfigureError("failed to parse configuration item [%s]=>%s: %s" % (
                 self.name, name, str(e)))
 
+    def get_size(self, name, default=None):
+        """
+        Returns the configuration value associated with the specified name,
+        coerced into a long representing size in bytes.  If there is no
+        configuration value in the section called `name`, then return the
+        value specified by `default`.  Note that `default` is returned
+        unmodified (i.e. not coerced into a long).  This makes it easy to
+        detect if a configuration value is not present by setting `default`
+        to None.
+
+        :param name: The configuration setting name.
+        :type name: str
+        :param default: The value to return if a value is not found.
+        :returns: The long value, or the default value.
+        """
+        if self.name == None or not self._options.has_option(self.name, name):
+            return default
+        string = self._options.get(self.name, name)
+        if string == None:
+            return default
+        string = string.strip()
+        tokens = [t for t in string.split(' ') if t != '']
+        try:
+            if len(tokens) < 2:
+                raise Exception("invalid size " + string)
+            value = long(tokens[0])
+            units = tokens[1].lower()
+            if units in ('kb', 'kilo', 'kilobyte', 'kilobytes'):
+                return value * 1024
+            if units in ('mb', 'mega', 'megabyte', 'megabytes'):
+                return value * 1024 * 1024
+            if units in ('gb', 'giga', 'gigabyte', 'gigabytes'):
+                return value * 1024 * 1024 * 1024
+            if units in ('tb', 'tera', 'terabyte', 'terabytes'):
+                return value * 1024 * 1024 * 1024 * 1024
+            if units in ('pb', 'peta', 'petabyte', 'petabytes'):
+                return value * 1024 * 1024 * 1024 * 1024 * 1024
+        except Exception, e:
+            raise ConfigureError("failed to parse configuration item [%s]=>%s: %s" % (
+                self.name, name, str(e)))
+
     def set(self, name, value):
         """
         Modify the configuration setting.  value must be a string.
