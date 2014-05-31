@@ -3,7 +3,7 @@
 # This file is part of Pesky.  Pesky is BSD-licensed software;
 # for copyright information see the LICENSE file.
 
-import os, datetime, shlex
+import os, datetime, shlex, re
 
 from pesky.settings.args import parse_args
 from pesky.settings.errors import ConfigureError
@@ -249,6 +249,36 @@ class Section(object):
                 return value * 1024 * 1024 * 1024 * 1024
             if units in ('pb', 'peta', 'petabyte', 'petabytes'):
                 return value * 1024 * 1024 * 1024 * 1024 * 1024
+        except Exception, e:
+            raise ConfigureError("failed to parse configuration item [%s]=>%s: %s" % (
+                self.name, name, str(e)))
+
+    def get_percent(self, name, default=None):
+        """
+        Returns the configuration value associated with the specified name,
+        coerced into a float representing a percentage.  If there is no
+        configuration value in the section called `name`, then return the
+        value specified by `default`.  Note that `default` is returned
+        unmodified (i.e. not coerced into a float).  This makes it easy to
+        detect if a configuration value is not present by setting `default`
+        to None.
+
+        :param name: The configuration setting name.
+        :type name: str
+        :param default: The value to return if a value is not found.
+        :returns: The float value, or the default value.
+        """
+        if self.name == None or not self._options.has_option(self.name, name):
+            return default
+        string = self._options.get(self.name, name)
+        if string == None:
+            return default
+        string = string.strip()
+        try:
+            m = re.match(r'(0\.\d+|[1-9]\d*\.\d+|\d+)\s*%', string)
+            if m is None:
+                raise Exception("invalid percentage " + string)
+            return float(m.group(0)) / 100.0
         except Exception, e:
             raise ConfigureError("failed to parse configuration item [%s]=>%s: %s" % (
                 self.name, name, str(e)))
