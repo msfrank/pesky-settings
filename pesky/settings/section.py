@@ -278,7 +278,7 @@ class Section(object):
             m = re.match(r'(0\.\d+|[1-9]\d*\.\d+|\d+)\s*%', string)
             if m is None:
                 raise Exception("invalid percentage " + string)
-            return float(m.group(0)) / 100.0
+            return float(m.group(1)) / 100.0
         except Exception, e:
             raise ConfigureError("failed to parse configuration item [%s]=>%s: %s" % (
                 self.name, name, str(e)))
