@@ -10,72 +10,58 @@ from pesky.settings.parser import Parser
 from pesky.settings.namespace import Namespace
 from pesky.settings.errors import ConfigureError
 
-class Settings(Parser):
+class Settings(object):
     """
-    Contains configuration loaded from the configuration file and
-    parsed from command-line arguments.
+    High-level settings configurator, which merges settings from command
+    line arguments, environment variables, and INI-style configuration files.
     """
+    def __init__(self, appname, appgroup, version, description, usage, subusage=None):
+        self.appname = appname
+        self.appgroup = appgroup
+        self.version = version
+        self.description = description
+        self.usage = usage
+        self.subusage = subusage
+        # initialize the environment parser
+        self.environ = EnvironmentParser()
+        self.environ.add_env_var('CONFIG_FILE_PATH', 'pesky.config.file', required=False)
+        # initialize the option parser
+        self.options = OptionParser()
+        self.options.set_appname(appname)
+        self.options.set_version(version)
+        self.options.set_description(description)
+        self.options.set_usage(usage)
+        if subusage is not None:
+            self.options.set_subusage(subusage)
+        self.options.add_option('c', 'config-file', 'pesky.config.file',
+            help="Load configuration from FILE", metavar="FILE", recurring=False)
+        # initialize the config parser
+        self.config = ConfigParser()
+        self.config.set_path(os.path.join('/', 'etc', appgroup, appname + '.conf'))
+        self.config.set_required(False)
 
-    def __init__(self, usage, version, description, subusage='Available subcommands:', section=None, appname=None, confbase='/etc/'):
+    def parse(self):
         """
-        :param usage: The usage string, displayed in --help output
-        :type usage: str
-        :param description: A short application description, displayed in --help output
-        :type description: str
-        :param subusage: If subcommands are specified, then display this message above
-        :type subusage: str
-        """
-        if appname is not None:
-            self.appname = appname
-        else:
-            self.appname = os.path.basename(sys.argv[0])
-        if section is not None:
-            self._section = section
-        else:
-            self._section = self.appname
-        self._confbase = os.path.abspath(confbase)
-        self._cwd = os.getcwd()
-        Parser.__init__(self, None, self.appname, version, usage, description, subusage, self._section)
-        self.add_option('c', 'config-file', 'config file',
-            section=self._section, help="Load configuration from FILE", metavar="FILE"
-            )
+        Load configuration from environment, command-line arguments, and
+        config file, and merge them together.
 
-    def parse(self, argv=None, needsconfig=False):
-        """
-        Load configuration from the configuration file and from command-line arguments.
-
-        :param argv: The argument vector, or None to use sys.argv
-        :type argv: [str]
-        :param needsconfig: True if the config file must be present for the application to function.
-        :type needsconfig: bool
         :returns: A :class:`Namespace` object with the parsed settings
         :rtype: :class:`Namespace`
         """
-        stack = list()
-        options = RawConfigParser()
-        args = list()
-        overrides = RawConfigParser()
-        try:
-            if argv is None:
-                argv = sys.argv
-            overrides.add_section(self._section)
-            overrides.set(self._section, 'config file', os.path.join(self._confbase, "%s.conf" % self.appname))
-            # parse command line arguments
-            stack,args = self._parse(argv[1:], overrides)
-            # load configuration file
-            config_file = overrides.get(self._section, 'config file')
-            path = os.path.normpath(os.path.join(self._cwd, config_file))
-            with open(path, 'r') as f:
-                options.readfp(f, path)
-        except getopt.GetoptError, e:
-            raise ConfigureError(str(e))
-        except EnvironmentError, e:
-            if needsconfig:
-                raise ConfigureError("failed to read configuration: %s", e.strerror)
-        # merge command line settings with config file settings
-        for section in overrides.sections():
-            for name,value in overrides.items(section):
-                if not options.has_section(section):
-                    options.add_section(section)
-                options.set(section, name, str(value))
-        return Namespace(stack, options, args, self.appname, self._cwd, self._section)
+        ns = Namespace()
+        strategy = AppendStrategy()
+        # render options settings, then merge them into the namespace
+        options = self.options.render()
+        ns.merge_with(options, strategy)
+        # render environment settings, then merge them into the namespace
+        environ = self.environ.render()
+        ns.merge_with(environ, strategy)
+        # if config file was specified by environ or options, then use it
+        config_path = ns.get_path('pesky.config.file')
+        if config_path is not None:
+            self.config.set_path(config_path)
+            self.config.set_required(True)
+        # render config file settings, then merge them into the namespace
+        config = self.config.render()
+        ns.merge_with(config, strategy)
+        return ns
