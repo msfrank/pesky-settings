@@ -167,7 +167,7 @@ class OptionParser(object):
             if isinstance(target, Option):
                 if store.contains(target.path) and not target.recurring:
                     raise ConfigureError("%s can only be specified once" % opt_name)
-            	store.append(target.path, opt_value)
+                store.append(target.path, opt_value)
             elif isinstance(target, Switch):
                 if store.contains(target.path) and not target.recurring:
                     raise ConfigureError("%s can only be specified once" % opt_name)

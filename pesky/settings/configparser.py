@@ -61,7 +61,7 @@ class ConfigParser(object):
                     elif required:
                         raise ConfigureError("missing required option %s => %s" % (section, option))
                 return store
-        except EnvironmentError, e:
+        except EnvironmentError as e:
             if self.required:
                 raise ConfigureError("failed to read configuration: %s" % e.strerror)
             return Store()
