@@ -3,13 +3,12 @@
 # This file is part of Pesky.  Pesky is BSD-licensed software;
 # for copyright information see the LICENSE file.
 
-import os, sys
-from ConfigParser import RawConfigParser
+from configparser import RawConfigParser
 
 from pesky.settings.store import Store
 from pesky.settings.errors import ConfigureError
 
-class ConfigParser(object):
+class IniFileParser(object):
     """
     Contains configuration loaded from the specified configuration file.
     """
@@ -48,14 +47,14 @@ class ConfigParser(object):
                 config = RawConfigParser()
                 config.readfp(f, self.path)
                 # parse sections 
-                for section,(path,required) in self._sections.iteritems():
+                for section,(path,required) in self._sections.items():
                     if config.has_section(section):
                         for name,value in config.items(section):
                             store.append(path + '.' + name, value)
                     elif required:
                         raise ConfigureError("missing required section %s" % section)
                 # parse items
-                for (section,option),(path,required) in self._options.iteritems():
+                for (section,option),(path,required) in self._options.items():
                     if config.has_option(section, option):
                         store.append(path, config.get(section, option))
                     elif required:

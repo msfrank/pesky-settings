@@ -29,7 +29,7 @@ class EnvironmentParser(object):
             environ = environ.copy()
         store = Store()
         # parse sections 
-        for varname,(path,required) in self._envvars.iteritems():
+        for varname,(path,required) in self._envvars.items():
             if varname in environ:
                 store.append(path, environ[varname])
             elif required:
