@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from setuptools import setup
 
@@ -29,7 +29,7 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: BSD License", 
         "Natural Language :: English",
-        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 3",
         ],
     # package contents
     namespace_packages=[
@@ -38,7 +38,8 @@ setup(
     packages=[
         "pesky",
         'pesky.settings',
+        'pesky.settings.cif',
         ],
     test_suite="test",
-    tests_require=["nose >= 1.3.1"]
+    tests_require=["nose >= 1.3.4"]
 )
