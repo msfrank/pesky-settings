@@ -5,7 +5,8 @@
 
 from configparser import RawConfigParser
 
-from pesky.settings.store import Store
+from pesky.settings.path import make_path
+from pesky.settings.valuetree import ValueTree
 from pesky.settings.errors import ConfigureError
 
 class IniFileParser(object):
@@ -15,13 +16,13 @@ class IniFileParser(object):
     def __init__(self):
         self._sections = {}
         self._options = {}
-        self.path = None
+        self.ini_path = None
         self.required = False
 
-    def set_path(self, path):
+    def set_ini_path(self, ini_path):
         """
         """
-        self.path = path
+        self.ini_path = ini_path
 
     def set_required(self, required):
         """
@@ -31,36 +32,40 @@ class IniFileParser(object):
     def add_section(self, section, path, required=False):
         """
         """
-        self._sections[section] = (path,required)
+        self._sections[section] = (make_path(path),required)
  
-    def add_option(self, section, option, path, required=False):
+    def add_option(self, section, option, path, name, required=False):
         """
         """
-        self._options[(section,option)] = (path,required)
+        self._options[(section,option)] = (path,name,required)
 
     def render(self):
         """
+        :returns:
+        :rtype: pesky.settings.valuetree.ValueTree
         """
+        values = ValueTree()
         try:
-            store = Store()
-            with open(self.path, 'r') as f:
+            with open(self.ini_path, 'r') as f:
                 config = RawConfigParser()
-                config.readfp(f, self.path)
-                # parse sections 
+                config.readfp(f, self.ini_path)
+                # parse sections
                 for section,(path,required) in self._sections.items():
                     if config.has_section(section):
+                        values.put_container(path)
                         for name,value in config.items(section):
-                            store.append(path + '.' + name, value)
+                            values.put_field(path, name, value)
                     elif required:
                         raise ConfigureError("missing required section %s" % section)
                 # parse items
-                for (section,option),(path,required) in self._options.items():
+                for (section,option),(path,name,required) in self._options.items():
                     if config.has_option(section, option):
-                        store.append(path, config.get(section, option))
+                        values.put_container(path)
+                        values.put_field(path, name, config.get(section, option))
                     elif required:
                         raise ConfigureError("missing required option %s => %s" % (section, option))
-                return store
+                return values
         except EnvironmentError as e:
             if self.required:
                 raise ConfigureError("failed to read configuration: %s" % e.strerror)
-            return Store()
+            return values

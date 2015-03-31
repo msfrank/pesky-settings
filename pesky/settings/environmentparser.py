@@ -5,7 +5,8 @@
 
 import os
 
-from pesky.settings.store import Store
+from pesky.settings.path import make_path
+from pesky.settings.valuetree import ValueTree
 from pesky.settings.errors import ConfigureError
 
 class EnvironmentParser(object):
@@ -15,23 +16,26 @@ class EnvironmentParser(object):
     def __init__(self):
         self._envvars = {}
 
-    def add_env_var(self, name, path, required=False):
+    def add_env_var(self, envvar, path, name, required=False):
         """
         """
-        self._envvars[name] = (path,required)
+        self._envvars[envvar] = (make_path(path),name,required)
  
     def render(self, environ=None):
         """
+        :returns:
+        :rtype: pesky.settings.valuetree.ValueTree
         """
         if environ is None:
             environ = os.environ.copy()
         else:
             environ = environ.copy()
-        store = Store()
+        values = ValueTree()
         # parse sections 
-        for varname,(path,required) in self._envvars.items():
-            if varname in environ:
-                store.append(path, environ[varname])
+        for envvar,(path,name,required) in self._envvars.items():
+            if envvar in environ:
+                values.put_container(path)
+                values.put_field(path, name, environ[envvar])
             elif required:
-                raise ConfigureError("missing required environment variable %s" % varname)
-        return store
+                raise ConfigureError("missing required environment variable %s" % envvar)
+        return values

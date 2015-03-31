@@ -1,6 +1,6 @@
 import io
 
-from pesky.settings.cif.path import Path
+from pesky.settings.path import Path
 from pesky.settings.cif.grammar import *
 
 class Frame(object):

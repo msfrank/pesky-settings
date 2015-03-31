@@ -12,27 +12,27 @@ class TestIniFileParser(unittest.TestCase):
     def test_config_section(self):
         "IniFileParser should parse a section"
         parser = IniFileParser()
-        parser.set_path(self.ini_path)
+        parser.set_ini_path(self.ini_path)
         parser.set_required(True)
         parser.add_section('foo', 'fooprogram.ini.foo')
-        store = parser.render()
-        self.assertEqual(store.get('fooprogram.ini.foo.required'), ['foo'])
-        self.assertEqual(store.get('fooprogram.ini.foo.optional'), ['bar'])
-        self.assertEqual(store.get('fooprogram.ini.foo.spaces in key'), ['baz'])
+        values = parser.render()
+        self.assertEqual(values.get_field('fooprogram.ini.foo', 'required'), 'foo')
+        self.assertEqual(values.get_field('fooprogram.ini.foo', 'optional'), 'bar')
+        self.assertEqual(values.get_field('fooprogram.ini.foo', 'spaces in key'), 'baz')
 
     def test_optional_config_section(self):
         "IniFileParser should parse a missing optional section"
         parser = IniFileParser()
-        parser.set_path(self.ini_path)
+        parser.set_ini_path(self.ini_path)
         parser.set_required(True)
         parser.add_section('missing', 'fooprogram.ini.foo', required=False)
-        store = parser.render()
-        self.assertEqual(store.get('fooprogram.ini.foo'), None)
+        values = parser.render()
+        self.assertRaises(KeyError, values.get_field, 'fooprogram.ini', 'foo')
 
     def test_required_config_section(self):
         "IniFileParser should raise ConfigureError if required section is missing"
         parser = IniFileParser()
-        parser.set_path(self.ini_path)
+        parser.set_ini_path(self.ini_path)
         parser.set_required(True)
         parser.add_section('missing', 'fooprogram.ini.foo', required=True)
         self.assertRaises(ConfigureError, parser.render)
@@ -40,25 +40,25 @@ class TestIniFileParser(unittest.TestCase):
     def test_config_option(self):
         "IniFileParser should parse an option"
         parser = IniFileParser()
-        parser.set_path(self.ini_path)
+        parser.set_ini_path(self.ini_path)
         parser.set_required(True)
-        parser.add_option('foo', 'required', 'fooprogram.ini.foo.required')
-        store = parser.render()
-        self.assertEqual(store.get('fooprogram.ini.foo.required'), ['foo'])
+        parser.add_option('foo', 'required', 'fooprogram.ini.foo', 'required')
+        values = parser.render()
+        self.assertEqual(values.get_field('fooprogram.ini.foo', 'required'), 'foo')
 
     def test_optional_config_option(self):
         "IniFileParser should parse a missing optional option"
         parser = IniFileParser()
-        parser.set_path(self.ini_path)
+        parser.set_ini_path(self.ini_path)
         parser.set_required(True)
-        parser.add_option('foo', 'missing', 'fooprogram.ini.foo.optional', required=False)
-        store = parser.render()
-        self.assertEqual(store.get('fooprogram.ini.foo.optional'), None)
+        parser.add_option('foo', 'missing', 'fooprogram.ini.foo', 'optional', required=False)
+        values = parser.render()
+        self.assertRaises(KeyError, values.get_field, 'fooprogram.ini.foo', 'optional')
 
     def test_required_config_option(self):
         "IniFileParser should raise ConfigureError if required option is missing"
         parser = IniFileParser()
-        parser.set_path(self.ini_path)
+        parser.set_ini_path(self.ini_path)
         parser.set_required(True)
-        parser.add_option('foo', 'missing', 'fooprogram.ini.foo.missing', required=True)
+        parser.add_option('foo', 'missing', 'fooprogram.ini.foo', 'missing', required=True)
         self.assertRaises(ConfigureError, parser.render)

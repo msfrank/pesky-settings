@@ -5,7 +5,8 @@
 
 import os, sys, getopt
 
-from pesky.settings.store import Store
+from pesky.settings.path import make_path
+from pesky.settings.valuetree import ValueTree
 from pesky.settings.errors import ConfigureError
 
 class OptionParser(object):
@@ -79,23 +80,23 @@ class OptionParser(object):
         :param o: o
         :type o: :class:`Option`
         """
-        if instance.shortname in self._options:
-            raise RuntimeError("-%s is already defined" % instance.shortname)
-        if instance.longname in self._options:
-            raise RuntimeError("--%s is already defined" % instance.longname)
-        self._options["-%s" % instance.shortname] = instance
-        self._options["--%s" % instance.longname] = instance
+        if instance.shortoption in self._options:
+            raise RuntimeError("-%s is already defined" % instance.shortoption)
+        if instance.longoption in self._options:
+            raise RuntimeError("--%s is already defined" % instance.longoption)
+        self._options["-%s" % instance.shortoption] = instance
+        self._options["--%s" % instance.longoption] = instance
         self._optslist.append(instance)
 
-    def add_option(self, shortname, longname, path, help=None, metavar=None, recurring=False):
+    def add_option(self, shortoption, longoption, path, name, help=None, metavar=None, recurring=False):
         """
         Add a command-line option to be parsed.  An option (as opposed to a switch)
         is required to have an argument.
 
-        :param shortname: the one letter option name.
-        :type shortname: str
-        :param longname: the long option name.
-        :type longname: str
+        :param shortoption: the one letter option name.
+        :type shortoption: str
+        :param longoption: the long option name.
+        :type longoption: str
         :param path: Override the specified key.
         :type path: str
         :param help: The help string, displayed in --help output.
@@ -103,23 +104,23 @@ class OptionParser(object):
         :param metavar: The variable displayed in the help string
         :type metavar: str
         """
-        self._add(Option(shortname, longname, path, help, metavar, recurring))
+        self._add(Option(shortoption, longoption, path, name, help, metavar, recurring))
 
-    def add_shortoption(self, shortname, path, help=None, metavar=None, recurring=False):
-        self._add(ShortOption(shortname, path, help, metavar, recurring))
+    def add_shortoption(self, shortoption, path, name, help=None, metavar=None, recurring=False):
+        self._add(ShortOption(shortoption, path, name, help, metavar, recurring))
 
-    def add_longoption(self, longname, path, help=None, metavar=None, recurring=False):
-        self._add(LongOption(longname, path, help, metavar, recurring))
+    def add_longoption(self, longoption, path, name, help=None, metavar=None, recurring=False):
+        self._add(LongOption(longoption, path, name, help, metavar, recurring))
 
-    def add_switch(self, shortname, longname, path, reverse=False, help=None, recurring=False):
+    def add_switch(self, shortswitch, longswitch, path, name, reverse=False, help=None, recurring=False):
         """
         Add a command-line switch to be parsed.  A switch (as opposed to an option)
         has no argument.
 
-        :param shortname: the one letter option name.
-        :type shortname: str
-        :param longname: the long option name.
-        :type longname: str
+        :param shortoption: the one letter option name.
+        :type shortoption: str
+        :param longoption: the long option name.
+        :type longoption: str
         :param path: Override the specified key.
         :type path: str
         :param reverse: If True, then the meaning of the switch is reversed.
@@ -127,37 +128,40 @@ class OptionParser(object):
         :param help: The help string, displayed in --help output.
         :type help: str
         """
-        self._add(Switch(shortname, longname, path, reverse, help, recurring))
+        self._add(Switch(shortswitch, longswitch, path, name, reverse, help, recurring))
 
-    def add_shortswitch(self, shortname, path, reverse=False, help=None, recurring=False):
-        self._add(ShortSwitch(shortname, path, reverse, help, recurring))
+    def add_shortswitch(self, shortswitch, path, name, reverse=False, help=None, recurring=False):
+        self._add(ShortSwitch(shortswitch, path, name, reverse, help, recurring))
 
-    def add_longswitch(self, longname, path, reverse=False, help=None, recurring=False):
-        self._add(LongSwitch(longname, path, reverse, help, recurring))
+    def add_longswitch(self, longswitch, path, name, reverse=False, help=None, recurring=False):
+        self._add(LongSwitch(longswitch, path, name, reverse, help, recurring))
 
     def render(self, argv=None):
         """
-        Parse the command line specified by argv.  If argv is None,
-        then use sys.argv.
+        Parse the command line specified by argv.  If argv is None, then use sys.argv.
+
+        :returns:
+        :rtype: pesky.settings.valuetree.ValueTree
         """
         if argv is None:
             argv = sys.argv[:]
         else:
             argv = argv[:]
-        store = Store()
-        store.append("program.command", sys.argv[0])
-        return self._render(argv[1:], store)
+        values = ValueTree()
+        values.put_container("pesky.option")
+        values.put_field("pesky.option", "command", sys.argv[0])
+        return self._render(argv[1:], values)
 
-    def _render(self, argv, store):
+    def _render(self, argv, values):
         """
         """
-        shortnames = ''.join([o.shortident for o in self._optslist if o.shortname != ''])
-        longnames = [o.longident for o in self._optslist if o.longname != '']
-        longnames += ['help', 'version']
+        shortoptions = ''.join([o.shortident for o in self._optslist if o.shortoption != ''])
+        longoptions = [o.longident for o in self._optslist if o.longoption != '']
+        longoptions += ['help', 'version']
         if len(self._subcommands) == 0:
-            options,args = getopt.gnu_getopt(argv, shortnames, longnames)
+            options,args = getopt.gnu_getopt(argv, shortoptions, longoptions)
         else:
-            options,args = getopt.getopt(argv, shortnames, longnames)
+            options,args = getopt.getopt(argv, shortoptions, longoptions)
         for opt_name,opt_value in options:
             if opt_name == '--help':
                 raise ProgramUsage(self)
@@ -165,16 +169,18 @@ class OptionParser(object):
                 raise ProgramVersion(self)
             target = self._options[opt_name]
             if isinstance(target, Option):
-                if store.contains(target.path) and not target.recurring:
+                values.put_container(target.path)
+                if values.contains(target.path, target.name) and not target.recurring:
                     raise ConfigureError("%s can only be specified once" % opt_name)
-                store.append(target.path, opt_value)
+                values.append_field(target.path, target.name, opt_value)
             elif isinstance(target, Switch):
-                if store.contains(target.path) and not target.recurring:
+                values.put_container(target.path)
+                if values.contains(target.path, target.name) and not target.recurring:
                     raise ConfigureError("%s can only be specified once" % opt_name)
                 if target.reverse == True:
-                    store.append(target.path, 'false')
+                    values.append_field(target.path, target.name, 'false')
                 else:
-                    store.append(target.path, 'true')
+                    values.append_field(target.path, target.name, 'true')
             else:
                 raise ValueError("Unknown target type %s" % target.__class__.__name__)
         if len(self._subcommands) > 0:
@@ -184,20 +190,22 @@ class OptionParser(object):
             args = args[1:]
             if not subcommand in self._subcommands:
                 raise ConfigureError("no subcommand named '%s'" % subcommand)
-            store.append('pesky.option.command', subcommand)
-            return self._subcommands[subcommand]._render(args, store)
-        return store
+            values.put_container('pesky.option')
+            values.append_field('pesky.option', 'subcommand', subcommand)
+            return self._subcommands[subcommand]._render(args, values)
+        return values
 
 class Option(object):
     """
     A command line option.
     """
-    def __init__(self, shortname, longname, path, help, metavar, recurring):
-        self.shortname = shortname
-        self.shortident = "%s:" % shortname
-        self.longname = longname
-        self.longident = "%s=" % longname
-        self.path = path
+    def __init__(self, shortoption, longoption, path, name, help, metavar, recurring):
+        self.shortoption = shortoption
+        self.shortident = "%s:" % shortoption
+        self.longoption = longoption
+        self.longident = "%s=" % longoption
+        self.path = make_path(path)
+        self.name = name
         self.help = help
         if metavar is not None:
             self.metavar = metavar
@@ -209,26 +217,27 @@ class ShortOption(Option):
     """
     A command line option with only a short name.
     """
-    def __init__(self, shortname, path, help, metavar, recurring):
-        Option.__init__(self, shortname, '', path, help, metavar, recurring)
+    def __init__(self, shortoption, path, name, help, metavar, recurring):
+        Option.__init__(self, shortoption, '', path, name, help, metavar, recurring)
 
 class LongOption(Option):
     """
     A command line option with only a long name.
     """
-    def __init__(self, longname, path, help, metavar, recurring):
-        Option.__init__(self, '', longname, path, help, metavar, recurring)
+    def __init__(self, longoption, path, name, help, metavar, recurring):
+        Option.__init__(self, '', longoption, path, name, help, metavar, recurring)
 
 class Switch(object):
     """
     A command line switch.
     """
-    def __init__(self, shortname, longname, path, reverse, help, recurring):
-        self.shortname = shortname
-        self.shortident = shortname
-        self.longname = longname
-        self.longident = longname
-        self.path = path
+    def __init__(self, shortoption, longoption, path, name, reverse, help, recurring):
+        self.shortoption = shortoption
+        self.shortident = shortoption
+        self.longoption = longoption
+        self.longident = longoption
+        self.path = make_path(path)
+        self.name = name
         self.reverse = reverse
         self.help = help
         self.recurring = recurring
@@ -237,22 +246,27 @@ class ShortSwitch(Switch):
     """
     A command line switch with only a short name.
     """
-    def __init__(self, shortname, path, reverse, help, recurring):
-        Switch.__init__(self, shortname, '', path, reverse, help, recurring)
+    def __init__(self, shortoption, path, name, reverse, help, recurring):
+        Switch.__init__(self, shortoption, '', path, name, reverse, help, recurring)
 
 class LongSwitch(Switch):
     """
     A command line switch with only a long name.
     """
-    def __init__(self, longname, path, reverse, help, recurring):
-        Switch.__init__(self, '', longname, path, reverse, help, recurring)
+    def __init__(self, longoption, path, name, reverse, help, recurring):
+        Switch.__init__(self, '', longoption, path, name, reverse, help, recurring)
 
 class ProgramUsage(Exception):
     """
     Display a usage message and exit.
     """
     def __init__(self, parser):
+        """
+        :param parser:
+        :type parser: pesky.settings.optionparser.OptionParser
+        """
         self._parser = parser
+
     def __str__(self):
         string = ""
         commands = []
@@ -260,22 +274,22 @@ class ProgramUsage(Exception):
         while parser != None:
             commands.insert(0, parser._command)
             parser = parser._parent
-        string += "Usage: %s %s\n" % (' '.join(commands), self.usage)
+        string += "Usage: %s %s\n" % (' '.join(commands), self._parser.usage)
         string += "\n" 
         # display the description, if it was specified
-        if self.description != None and self.description != '':
-            string += self.description + "\n"
+        if self._parser.description != None and self._parser.description != '':
+            string += self._parser.description + "\n"
             string += "\n"
         # display options
-        if len(self._optslist) > 0:
+        if len(self._parser._optslist) > 0:
             options = []
             maxlength = 0
-            for o in self._optslist:
+            for o in self._parser._optslist:
                 spec = []
-                if o.shortname != '':
-                    spec.append("-%s" % o.shortname)
-                if o.longname != '':
-                    spec.append("--%s" % o.longname)
+                if o.shortoption != '':
+                    spec.append("-%s" % o.shortoption)
+                if o.longoption != '':
+                    spec.append("--%s" % o.longoption)
                 if isinstance(o, Switch):
                     spec = ','.join(spec)
                 elif isinstance(o, Option):
@@ -287,10 +301,10 @@ class ProgramUsage(Exception):
                 string += " %s%s\n" % (spec.ljust(maxlength + 4), help)
             string += "\n"
         # display subcommands, if there are any
-        if len(self._subcommands) > 0:
-            string += self.subusage + "\n"
+        if len(self._parser._subcommands) > 0:
+            string += self._parser.subusage + "\n"
             string += "\n"
-            for command,parser in sorted(self._subcommands.items()):
+            for command,parser in sorted(self._parser._subcommands.items()):
                 string += " %s\n" % command
             string += "\n"
         return string
@@ -304,5 +318,6 @@ class ProgramVersion(Exception):
             parser = parser._parent
         self.appname = parser.appname
         self.version = parser.version
+
     def __str__(self):
         return "%s %s\n" % (self.appname, self.version)

@@ -1,7 +1,7 @@
 import collections
 import pyparsing as pp
 
-from pesky.settings.cif.path import Path
+from pesky.settings.path import path_parser
 
 Comment = collections.namedtuple('Comment',['value'])
 ObjectDef = collections.namedtuple('ObjectDef', ['path'])
@@ -10,24 +10,15 @@ ValueContinuation = collections.namedtuple('ValueContinuation', ['value_continua
 ListContinuation = collections.namedtuple('ListContinuation', ['list_continuation'])
 
 comment_parser = pp.Literal('#') + pp.restOfLine
-
-pathsegment_parser = pp.Word(pp.alphanums) ^ pp.quotedString
-path_parser = pp.ZeroOrMore(pathsegment_parser + pp.Literal('.')) + pathsegment_parser
 objectdef_parser = path_parser + pp.Literal(':')
-
 fieldkey_parser = pp.Word(pp.alphanums) ^ pp.quotedString
 fielddef_parser = fieldkey_parser + pp.Literal('=') + pp.restOfLine
-
 valuecontinuation_parser = pp.Literal('|') + pp.restOfLine
 listcontinuation_parser = pp.Literal(',') + pp.restOfLine
 
 def comment_parse_action(tokens):
     return Comment(tokens[1])
 comment_parser.setParseAction(comment_parse_action)
-
-def path_parse_action(tokens):
-    return Path(list(filter(lambda x: x != '.', tokens)))
-path_parser.setParseAction(path_parse_action)
 
 def objectdef_parse_action(tokens):
     return ObjectDef(tokens[0])
