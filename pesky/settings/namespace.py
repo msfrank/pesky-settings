@@ -49,25 +49,25 @@ class Namespace(object):
         return Namespace.or_none(self.get_raw_list, path, name)
 
     def get_str(self, path, name):
-        return self._values.get_field(path, name).strip()
+        return str_to_stripped(self.get_raw(path, name))
 
     def get_str_or_none(self, path, name):
         return Namespace.or_none(self.get_str, path, name)
 
     def get_str_list(self, path, name):
-        return map(lambda x: x.strip(), self._values.get_field_list(path, name))
+        return map(lambda x: str_to_stripped(x), self._values.get_field_list(path, name))
 
     def get_str_list_or_none(self, path, name):
         return Namespace.or_none(self.get_str_list, path, name)
 
     def get_flattened(self, path, name):
-        return ' '.join(self._values.get_field(path, name).split())
+        return str_to_flattened(self.get_raw(path, name))
 
     def get_flattened_or_none(self, path, name):
         return Namespace.or_none(self.get_str, path, name)
 
     def get_flattened_list(self, path, name):
-        return map(lambda x: ' '.join(x.split()), self._values.get_field_list(path, name))
+        return map(lambda x: str_to_flattened(x), self._values.get_field_list(path, name))
 
     def get_flattened_list_or_none(self, path, name):
         return Namespace.or_none(self.get_flattened_list, path, name)

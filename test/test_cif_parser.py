@@ -43,6 +43,7 @@ field3 = value3
 """
 
     def test_load_multi_line(self):
+        "CIF should parse a multi-line document"
         pesky.settings.cif.parser.debugs(self.multi_line_data)
         root = pesky.settings.cif.parser.loads(self.multi_line_data)
         print(root)
@@ -57,6 +58,7 @@ field3 = value3
         self.assertEquals(root['object5']['field9'], ' value9')
 
     def test_load_deep_path(self):
+        "CIF should parse a multi-line document with deep paths"
         pesky.settings.cif.parser.debugs(self.deep_path_data)
         root = pesky.settings.cif.parser.loads(self.deep_path_data)
         print(root)
@@ -65,6 +67,7 @@ field3 = value3
         self.assertEquals(root['field3'], ' value3')
 
     def test_load_value_continuation_data(self):
+        "CIF should parse a multi-line document with value continuations"
         pesky.settings.cif.parser.debugs(self.value_continuation_data)
         root = pesky.settings.cif.parser.loads(self.value_continuation_data)
         print(root)

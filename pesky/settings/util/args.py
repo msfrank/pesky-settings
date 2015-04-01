@@ -47,7 +47,7 @@ def parse_args(args, *spec, **kwargs):
                 if names != None and i < len(names):
                     raise ConfigureError("missing argument " + names[i])
                 raise ConfigureError("missing argument")
-        except Exception, e:
+        except Exception as e:
             if names != None and i < len(names):
                 raise ConfigureError("failed to parse argument %s: %s" % (names[i], str(e)))
             raise ConfigureError("failed to parse argument: %s" % str(e))
