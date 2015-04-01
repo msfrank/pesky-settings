@@ -3,7 +3,7 @@
 # This file is part of Pesky.  Pesky is BSD-licensed software;
 # for copyright information see the LICENSE file.
 
-from configparser import RawConfigParser
+from configparser import ConfigParser
 
 from pesky.settings.path import make_path
 from pesky.settings.valuetree import ValueTree
@@ -37,7 +37,7 @@ class IniFileParser(object):
     def add_option(self, section, option, path, name, required=False):
         """
         """
-        self._options[(section,option)] = (path,name,required)
+        self._options[(section,option)] = (make_path(path),name,required)
 
     def render(self):
         """
@@ -46,9 +46,11 @@ class IniFileParser(object):
         """
         values = ValueTree()
         try:
+            if self.ini_path is None:
+                raise Exception("no configuration file was specified")
             with open(self.ini_path, 'r') as f:
-                config = RawConfigParser()
-                config.readfp(f, self.ini_path)
+                config = ConfigParser()
+                config.read_file(f, self.ini_path)
                 # parse sections
                 for section,(path,required) in self._sections.items():
                     if config.has_section(section):

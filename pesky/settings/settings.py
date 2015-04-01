@@ -3,12 +3,14 @@
 # This file is part of Pesky.  Pesky is BSD-licensed software;
 # for copyright information see the LICENSE file.
 
-import os, sys, getopt, datetime
-from ConfigParser import RawConfigParser
+import os
 
-from pesky.settings.parser import Parser
+from pesky.settings.inifileparser import IniFileParser
+from pesky.settings.optionparser import OptionParser
+from pesky.settings.environmentparser import EnvironmentParser
+from pesky.settings.mergestrategy import MergeAccumulator, ReplaceStrategy
+from pesky.settings.valuetree import ValueTree
 from pesky.settings.namespace import Namespace
-from pesky.settings.errors import ConfigureError
 
 class Settings(object):
     """
@@ -24,7 +26,7 @@ class Settings(object):
         self.subusage = subusage
         # initialize the environment parser
         self.environ = EnvironmentParser()
-        self.environ.add_env_var('CONFIG_FILE_PATH', 'pesky.config.file', required=False)
+        self.environ.add_env_var('CONFIG_FILE_PATH', 'pesky.config', 'file', required=False)
         # initialize the option parser
         self.options = OptionParser()
         self.options.set_appname(appname)
@@ -33,12 +35,41 @@ class Settings(object):
         self.options.set_usage(usage)
         if subusage is not None:
             self.options.set_subusage(subusage)
-        self.options.add_option('c', 'config-file', 'pesky.config.file',
+        self.options.add_option('c', 'config-file', 'pesky.config', 'file',
             help="Load configuration from FILE", metavar="FILE", recurring=False)
-        # initialize the config parser
-        self.config = ConfigParser()
-        self.config.set_path(os.path.join('/', 'etc', appgroup, appname + '.conf'))
+        # initialize the inifile parser
+        self.config = IniFileParser()
+        self.config.set_ini_path(os.path.join('/', 'etc', appgroup, appname + '.conf'))
         self.config.set_required(False)
+        # initialize the merge accumulator
+        self.accumulator = MergeAccumulator(ReplaceStrategy())
+
+    def add_env_var(self, envvar, path, name, required=False):
+        self.environ.add_env_var(envvar, path, name, required)
+
+    def add_arg_option(self, shortoption, longoption, path, name, help=None, metavar=None, recurring=False):
+        self.options.add_option(shortoption, longoption, path, name, help, metavar, recurring)
+
+    def add_arg_shortoption(self, shortoption, path, name, help=None, metavar=None, recurring=False):
+        self.options.add_shortoption(shortoption, path, name, help, metavar, recurring)
+
+    def add_arg_longoption(self, longoption, path, name, help=None, metavar=None, recurring=False):
+        self.options.add_longoption(longoption, path, name, help, metavar, recurring)
+
+    def add_arg_switch(self, shortswitch, longswitch, path, name, reverse=False, help=None, recurring=False):
+        self.options.add_switch(shortswitch, longswitch, path, name, reverse, help, recurring)
+
+    def add_arg_shortswitch(self, shortswitch, path, name, reverse=False, help=None, recurring=False):
+        self.options.add_shortswitch(shortswitch, path, name, reverse, help, recurring)
+
+    def add_arg_longswitch(self, longswitch, path, name, reverse=False, help=None, recurring=False):
+        self.options.add_longswitch(longswitch, path, name, reverse, help, recurring)
+
+    def add_ini_section(self, section, path, required=False):
+        self.config.add_section(section, path, required)
+
+    def add_ini_option(self, section, option, path, name, required=False):
+        self.config.add_option(section, option, path, name, required)
 
     def parse(self):
         """
@@ -48,20 +79,21 @@ class Settings(object):
         :returns: A :class:`Namespace` object with the parsed settings
         :rtype: :class:`Namespace`
         """
-        ns = Namespace()
-        strategy = AppendStrategy()
-        # render options settings, then merge them into the namespace
-        options = self.options.render()
-        ns.merge_with(options, strategy)
-        # render environment settings, then merge them into the namespace
-        environ = self.environ.render()
-        ns.merge_with(environ, strategy)
+        values = ValueTree()
+        namespace = Namespace(values)
+        # render options settings, then merge them
+        proposed = self.options.render()
+        values = self.accumulator.merge(values, proposed)
+        # render environment settings, then merge them
+        proposed = self.environ.render()
+        values = self.accumulator.merge(values, proposed)
         # if config file was specified by environ or options, then use it
-        config_path = ns.get_path('pesky.config.file')
-        if config_path is not None:
-            self.config.set_path(config_path)
+        if namespace.contains_field('pesky.config', 'file'):
+            config_path = values.get_field('pesky.config', 'file')
+            self.config.set_ini_path(config_path)
             self.config.set_required(True)
-        # render config file settings, then merge them into the namespace
-        config = self.config.render()
-        ns.merge_with(config, strategy)
-        return ns
+        # render config file settings, then merge them
+        proposed = self.config.render()
+        values = self.accumulator.merge(values, proposed)
+        # return the namespace containing the merged values
+        return namespace

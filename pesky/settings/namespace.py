@@ -3,8 +3,7 @@
 # This file is part of Pesky.  Pesky is BSD-licensed software;
 # for copyright information see the LICENSE file.
 
-from pesky.settings.path import make_path
-from pesky.settings.errors import ConfigureError
+from pesky.settings.util.converters import str_to_stripped, str_to_flattened
 
 class Namespace(object):
     """
