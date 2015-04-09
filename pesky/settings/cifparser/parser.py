@@ -1,7 +1,7 @@
 import io
 
 from pesky.settings.path import Path
-from pesky.settings.cif.grammar import *
+from pesky.settings.cifparser.grammar import *
 
 class Frame(object):
     def __init__(self, linenum, indent):

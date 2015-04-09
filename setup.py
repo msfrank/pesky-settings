@@ -38,7 +38,7 @@ setup(
     packages=[
         "pesky",
         'pesky.settings',
-        'pesky.settings.cif',
+        'pesky.settings.cifparser',
         ],
     test_suite="test",
     tests_require=["nose >= 1.3.4"]

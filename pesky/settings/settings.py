@@ -17,13 +17,12 @@ class Settings(object):
     High-level settings configurator, which merges settings from command
     line arguments, environment variables, and INI-style configuration files.
     """
-    def __init__(self, appname, appgroup, version, description, usage, subusage=None):
+    def __init__(self, appname, appgroup, version, description, usage):
         self.appname = appname
         self.appgroup = appgroup
         self.version = version
         self.description = description
         self.usage = usage
-        self.subusage = subusage
         # initialize the environment parser
         self.environ = EnvironmentParser()
         self.environ.add_env_var('CONFIG_FILE_PATH', 'pesky.config', 'file', required=False)
@@ -33,8 +32,6 @@ class Settings(object):
         self.options.set_version(version)
         self.options.set_description(description)
         self.options.set_usage(usage)
-        if subusage is not None:
-            self.options.set_subusage(subusage)
         self.options.add_option('c', 'config-file', 'pesky.config', 'file',
             help="Load configuration from FILE", metavar="FILE", recurring=False)
         # initialize the inifile parser
