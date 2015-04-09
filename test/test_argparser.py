@@ -1,13 +1,13 @@
 
 import sys
 import unittest
-from pesky.settings.optionparser import OptionParser, ProgramUsage, ProgramVersion
+from pesky.settings.argparser import ArgParser, ProgramUsage, ProgramVersion
 
-class TestOptionParser(unittest.TestCase):
+class TestArgParser(unittest.TestCase):
 
     def test_short_option(self):
-        "OptionParser should parse a short option"
-        parser = OptionParser()
+        "ArgParser should parse a short option"
+        parser = ArgParser()
         parser.set_appname("fooprogram")
         parser.set_version("0.0.1")
         parser.set_usage("use fooprogram")
@@ -18,8 +18,8 @@ class TestOptionParser(unittest.TestCase):
         self.assertEqual(values.get_field('fooprogram.shortoption', 's'), 'foo')
 
     def test_long_option(self):
-        "OptionParser should parse a long option"
-        parser = OptionParser()
+        "ArgParser should parse a long option"
+        parser = ArgParser()
         parser.set_appname("fooprogram")
         parser.set_version("0.0.1")
         parser.set_usage("use fooprogram")
@@ -30,8 +30,8 @@ class TestOptionParser(unittest.TestCase):
         self.assertEqual(values.get_field('fooprogram.longoption', 'long'), 'foo')
 
     def test_long_and_short_option(self):
-        "OptionParser should parse a long and short option"
-        parser = OptionParser()
+        "ArgParser should parse a long and short option"
+        parser = ArgParser()
         parser.set_appname("fooprogram")
         parser.set_version("0.0.1")
         parser.set_usage("use fooprogram")
@@ -45,8 +45,8 @@ class TestOptionParser(unittest.TestCase):
         self.assertEqual(values.get_field('fooprogram.option', 'long_and_short'), 'bar')
 
     def test_recurring_option(self):
-        "OptionParser should parse a recurring option"
-        parser = OptionParser()
+        "ArgParser should parse a recurring option"
+        parser = ArgParser()
         parser.set_appname("fooprogram")
         parser.set_version("0.0.1")
         parser.set_usage("use fooprogram")
@@ -57,8 +57,8 @@ class TestOptionParser(unittest.TestCase):
         self.assertListEqual(values.get_field_list('fooprogram.shortoption', 's'), ['foo', 'bar', 'baz'])
 
     def test_short_switch(self):
-        "OptionParser should parse a short switch"
-        parser = OptionParser()
+        "ArgParser should parse a short switch"
+        parser = ArgParser()
         parser.set_appname("fooprogram")
         parser.set_version("0.0.1")
         parser.set_usage("use fooprogram")
@@ -69,8 +69,8 @@ class TestOptionParser(unittest.TestCase):
         self.assertEqual(values.get_field('fooprogram.shortswitch', 's'), 'true')
 
     def test_long_switch(self):
-        "OptionParser should parse a long switch"
-        parser = OptionParser()
+        "ArgParser should parse a long switch"
+        parser = ArgParser()
         parser.set_appname("fooprogram")
         parser.set_version("0.0.1")
         parser.set_usage("use fooprogram")
@@ -81,8 +81,8 @@ class TestOptionParser(unittest.TestCase):
         self.assertEqual(values.get_field('fooprogram.longswitch', 'long'), 'true')
 
     def test_long_and_short_switch(self):
-        "OptionParser should parse a long and short switch"
-        parser = OptionParser()
+        "ArgParser should parse a long and short switch"
+        parser = ArgParser()
         parser.set_appname("fooprogram")
         parser.set_version("0.0.1")
         parser.set_usage("use fooprogram")
@@ -96,8 +96,8 @@ class TestOptionParser(unittest.TestCase):
         self.assertEqual(values.get_field('fooprogram.switch', 'long_and_short'), 'true')
 
     def test_recurring_switch(self):
-        "OptionParser should parse a recurring switch"
-        parser = OptionParser()
+        "ArgParser should parse a recurring switch"
+        parser = ArgParser()
         parser.set_appname("fooprogram")
         parser.set_version("0.0.1")
         parser.set_usage("use fooprogram")
@@ -111,8 +111,8 @@ class TestOptionParser(unittest.TestCase):
         self.assertListEqual(values.get_field_list('fooprogram.shortswitch', 's'), ['true', 'true', 'true'])
 
     def test_sub_command(self):
-        "OptionParser should parse a subcommand"
-        parser = OptionParser()
+        "ArgParser should parse a subcommand"
+        parser = ArgParser()
         parser.set_appname("fooprogram")
         parser.set_version("0.0.1")
         parser.set_usage("use fooprogram")
@@ -126,8 +126,8 @@ class TestOptionParser(unittest.TestCase):
         self.assertEqual(values.get_field('fooprogram.dosub.option', 's'), 'bar')
 
     def test_usage(self):
-        "OptionParser should raise ProgramUsage when --help is specified"
-        parser = OptionParser()
+        "ArgParser should raise ProgramUsage when --help is specified"
+        parser = ArgParser()
         parser.set_appname("fooprogram")
         parser.set_version("0.0.1")
         parser.set_usage("use fooprogram")
@@ -136,8 +136,8 @@ class TestOptionParser(unittest.TestCase):
         self.assertRaises(ProgramUsage, parser.render)
 
     def test_version(self):
-        "OptionParser should raise ProgramVersion when --version is specified"
-        parser = OptionParser()
+        "ArgParser should raise ProgramVersion when --version is specified"
+        parser = ArgParser()
         parser.set_appname("fooprogram")
         parser.set_version("0.0.1")
         parser.set_usage("use fooprogram")

@@ -6,7 +6,7 @@
 import os
 
 from pesky.settings.inifileparser import IniFileParser
-from pesky.settings.optionparser import OptionParser
+from pesky.settings.argparser import ArgParser
 from pesky.settings.environmentparser import EnvironmentParser
 from pesky.settings.mergestrategy import MergeAccumulator, ReplaceStrategy
 from pesky.settings.valuetree import ValueTree
@@ -24,49 +24,49 @@ class Settings(object):
         self.description = description
         self.usage = usage
         # initialize the environment parser
-        self.environ = EnvironmentParser()
-        self.environ.add_env_var('CONFIG_FILE_PATH', 'pesky.config', 'file', required=False)
+        self.environmentparser = EnvironmentParser()
+        self.environmentparser.add_env_var('CONFIG_FILE_PATH', 'pesky.config', 'file', required=False)
         # initialize the option parser
-        self.options = OptionParser()
-        self.options.set_appname(appname)
-        self.options.set_version(version)
-        self.options.set_description(description)
-        self.options.set_usage(usage)
-        self.options.add_option('c', 'config-file', 'pesky.config', 'file',
+        self.argparser = ArgParser()
+        self.argparser.set_appname(appname)
+        self.argparser.set_version(version)
+        self.argparser.set_description(description)
+        self.argparser.set_usage(usage)
+        self.argparser.add_option('c', 'config-file', 'pesky.config', 'file',
             help="Load configuration from FILE", metavar="FILE", recurring=False)
         # initialize the inifile parser
-        self.config = IniFileParser()
-        self.config.set_ini_path(os.path.join('/', 'etc', appgroup, appname + '.conf'))
-        self.config.set_required(False)
+        self.inifileparser = IniFileParser()
+        self.inifileparser.set_ini_path(os.path.join('/', 'etc', appgroup, appname + '.conf'))
+        self.inifileparser.set_required(False)
         # initialize the merge accumulator
         self.accumulator = MergeAccumulator(ReplaceStrategy())
 
     def add_env_var(self, envvar, path, name, required=False):
-        self.environ.add_env_var(envvar, path, name, required)
+        self.environmentparser.add_env_var(envvar, path, name, required)
 
     def add_arg_option(self, shortoption, longoption, path, name, help=None, metavar=None, recurring=False):
-        self.options.add_option(shortoption, longoption, path, name, help, metavar, recurring)
+        self.argparser.add_option(shortoption, longoption, path, name, help, metavar, recurring)
 
     def add_arg_shortoption(self, shortoption, path, name, help=None, metavar=None, recurring=False):
-        self.options.add_shortoption(shortoption, path, name, help, metavar, recurring)
+        self.argparser.add_shortoption(shortoption, path, name, help, metavar, recurring)
 
     def add_arg_longoption(self, longoption, path, name, help=None, metavar=None, recurring=False):
-        self.options.add_longoption(longoption, path, name, help, metavar, recurring)
+        self.argparser.add_longoption(longoption, path, name, help, metavar, recurring)
 
     def add_arg_switch(self, shortswitch, longswitch, path, name, reverse=False, help=None, recurring=False):
-        self.options.add_switch(shortswitch, longswitch, path, name, reverse, help, recurring)
+        self.argparser.add_switch(shortswitch, longswitch, path, name, reverse, help, recurring)
 
     def add_arg_shortswitch(self, shortswitch, path, name, reverse=False, help=None, recurring=False):
-        self.options.add_shortswitch(shortswitch, path, name, reverse, help, recurring)
+        self.argparser.add_shortswitch(shortswitch, path, name, reverse, help, recurring)
 
     def add_arg_longswitch(self, longswitch, path, name, reverse=False, help=None, recurring=False):
-        self.options.add_longswitch(longswitch, path, name, reverse, help, recurring)
+        self.argparser.add_longswitch(longswitch, path, name, reverse, help, recurring)
 
     def add_ini_section(self, section, path, required=False):
-        self.config.add_section(section, path, required)
+        self.inifileparser.add_section(section, path, required)
 
     def add_ini_option(self, section, option, path, name, required=False):
-        self.config.add_option(section, option, path, name, required)
+        self.inifileparser.add_option(section, option, path, name, required)
 
     def parse(self):
         """
@@ -79,18 +79,18 @@ class Settings(object):
         values = ValueTree()
         namespace = Namespace(values)
         # render options settings, then merge them
-        proposed = self.options.render()
+        proposed = self.argparser.render()
         values = self.accumulator.merge(values, proposed)
         # render environment settings, then merge them
-        proposed = self.environ.render()
+        proposed = self.environmentparser.render()
         values = self.accumulator.merge(values, proposed)
         # if config file was specified by environ or options, then use it
         if namespace.contains_field('pesky.config', 'file'):
             config_path = values.get_field('pesky.config', 'file')
-            self.config.set_ini_path(config_path)
-            self.config.set_required(True)
+            self.inifileparser.set_ini_path(config_path)
+            self.inifileparser.set_required(True)
         # render config file settings, then merge them
-        proposed = self.config.render()
+        proposed = self.inifileparser.render()
         values = self.accumulator.merge(values, proposed)
         # return the namespace containing the merged values
         return namespace

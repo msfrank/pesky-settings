@@ -13,7 +13,7 @@ class CommandRoot(Settings):
         self.commands = {}
 
     def add_command(self, name, description, usage):
-        options = self.options.add_subcommand(name)
+        options = self.argparser.add_subcommand(name)
         options.set_appname(name)
         options.set_description(description)
         options.set_usage(usage)

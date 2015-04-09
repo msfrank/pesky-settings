@@ -9,10 +9,10 @@ from pesky.settings.path import make_path
 from pesky.settings.valuetree import ValueTree
 from pesky.settings.errors import ConfigureError
 
-class OptionParser(object):
+class ArgParser(object):
     """
     :param parent:
-    :type parent: :class:`BaseOptionParser`
+    :type parent: pesky.settings.argparser.ArgParser`
     :param name:
     :type name: str
     :param usage:
@@ -67,7 +67,7 @@ class OptionParser(object):
         """
         if name in self._subcommands:
             raise ConfigureError("subcommand '%s' is already defined" % name)
-        subcommand = OptionParser()
+        subcommand = ArgParser()
         subcommand._command = name
         subcommand._parent = self
         self._subcommands[name] = subcommand
@@ -263,7 +263,7 @@ class ProgramUsage(Exception):
     def __init__(self, parser):
         """
         :param parser:
-        :type parser: pesky.settings.optionparser.OptionParser
+        :type parser: pesky.settings.optionparser.ArgParser
         """
         self._parser = parser
 
