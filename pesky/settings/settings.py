@@ -3,7 +3,7 @@
 # This file is part of Pesky.  Pesky is BSD-licensed software;
 # for copyright information see the LICENSE file.
 
-import os
+import os, sys
 
 from pesky.settings.inifileparser import IniFileParser
 from pesky.settings.argparser import ArgParser
@@ -11,6 +11,14 @@ from pesky.settings.environmentparser import EnvironmentParser
 from pesky.settings.mergestrategy import MergeAccumulator, ReplaceStrategy
 from pesky.settings.valuetree import ValueTree
 from pesky.settings.namespace import Namespace
+from pesky.settings.errors import ConfigureError
+
+class Parser(object):
+    """
+    """
+    def __init__(self):
+        pass
+
 
 class Settings(object):
     """
@@ -23,21 +31,22 @@ class Settings(object):
         self.version = version
         self.description = description
         self.usage = usage
+        self.subusage = 'Available subcommands:'
         # initialize the environment parser
         self.environmentparser = EnvironmentParser()
-        self.environmentparser.add_env_var('CONFIG_FILE_PATH', 'pesky.config', 'file', required=False)
-        # initialize the option parser
+        self.environmentparser.add_env_var('CONFIG_FILE_PATH', 'pesky.settings', 'config_file', required=False)
+        # initialize the arg parser
         self.argparser = ArgParser()
-        self.argparser.set_appname(appname)
-        self.argparser.set_version(version)
-        self.argparser.set_description(description)
-        self.argparser.set_usage(usage)
-        self.argparser.add_option('c', 'config-file', 'pesky.config', 'file',
+        self.argparser.add_option('c', 'config-file', 'pesky.settings', 'config_file',
             help="Load configuration from FILE", metavar="FILE", recurring=False)
+        self.argparser.add_switch('h', 'help', 'pesky.settings', 'display_help',
+            help="Display usage message", recurring=False)
+        self.argparser.add_switch('V', 'version', 'pesky.settings', 'display_version',
+            help="Display version message", recurring=False)
+        # initialize the command parser
+        self.subcommands = {}
         # initialize the inifile parser
         self.inifileparser = IniFileParser()
-        self.inifileparser.set_ini_path(os.path.join('/', 'etc', appgroup, appname + '.conf'))
-        self.inifileparser.set_required(False)
         # initialize the merge accumulator
         self.accumulator = MergeAccumulator(ReplaceStrategy())
 
@@ -68,6 +77,19 @@ class Settings(object):
     def add_ini_option(self, section, option, path, name, required=False):
         self.inifileparser.add_option(section, option, path, name, required)
 
+    # def add_command(self, name, description, usage):
+    #     """
+    #     :param name:
+    #     :param description:
+    #     :param usage:
+    #     :return:
+    #     """
+    #     if name in self.subcommands:
+    #         raise ConfigureError("command '%s' is already defined" % name)
+    #     command = Command(name, description, usage)
+    #     command.set_parent(self)
+    #     return command
+
     def parse(self):
         """
         Load configuration from environment, command-line arguments, and
@@ -77,20 +99,30 @@ class Settings(object):
         :rtype: :class:`Namespace`
         """
         values = ValueTree()
-        namespace = Namespace(values)
-        # render options settings, then merge them
-        proposed = self.argparser.render()
-        values = self.accumulator.merge(values, proposed)
-        # render environment settings, then merge them
-        proposed = self.environmentparser.render()
-        values = self.accumulator.merge(values, proposed)
+        values.put_container("pesky.settings")
+
+        # store the program name
+        values.put_field("pesky.settings", "program", sys.argv[0])
+
+        # render program arguments, then merge them
+
+        proposed = self.argparser.render(sys.argv[1:])
+        self.accumulator.merge(values, proposed)
+
+        # render environment variables, then merge them
+        proposed = self.environmentparser.render(os.environ)
+        self.accumulator.merge(values, proposed)
+
         # if config file was specified by environ or options, then use it
-        if namespace.contains_field('pesky.config', 'file'):
-            config_path = values.get_field('pesky.config', 'file')
-            self.inifileparser.set_ini_path(config_path)
-            self.inifileparser.set_required(True)
-        # render config file settings, then merge them
-        proposed = self.inifileparser.render()
-        values = self.accumulator.merge(values, proposed)
+        ini_path = os.path.join('/', 'etc', self.appgroup, self.appname + '.conf')
+        ini_required = False
+        if values.contains('pesky.settings', 'config_file'):
+            ini_path = values.get_field('pesky.settings', 'config_file')
+            ini_required = True
+
+        # render config file parameters, then merge them
+        proposed = self.inifileparser.render(ini_path, ini_required)
+        self.accumulator.merge(values, proposed)
+
         # return the namespace containing the merged values
-        return namespace
+        return Namespace(values)

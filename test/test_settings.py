@@ -1,8 +1,10 @@
+import bootstrap
+
 import os
 import sys
 import unittest
+
 from pesky.settings.settings import Settings
-from pesky.settings import ConfigureError
 
 tests_directory = os.path.dirname(os.path.abspath(__file__))
 
@@ -24,3 +26,13 @@ class TestSettings(unittest.TestCase):
         self.assertEqual(ns.get_str('fooprogram.config', 'required'), 'foo')
         self.assertEqual(ns.get_str('fooprogram.config', 'optional'), 'bar')
         self.assertEqual(ns.get_str('fooprogram.config', 'spaces in key'), 'baz')
+
+    # def test_parse_subcommand(self):
+    #     settings = Settings('fooprogram', 'fooutils', '0.0.1', 'do foo things', 'fooprogram [OPTIONS...]')
+    #     settings.add_arg_longoption('foo', 'fooprogram.option', 'foo')
+    #     command = settings.add_command('start', "start foo things", "fooprogram start [OPTIONS...]")
+    #     command.add_arg_longoption('foo', 'fooprogram.start.option', 'foo')
+    #     sys.argv = ['fooprogram', '--foo', 'bar', 'start', '--foo', 'baz']
+    #     ns = settings.parse()
+    #     self.assertEqual(ns.get_str('fooprogram.option', 'foo'), 'bar')
+    #     self.assertEqual(ns.get_str('fooprogram.start.option', 'foo'), 'baz')

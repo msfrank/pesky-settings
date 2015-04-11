@@ -10,21 +10,21 @@ class TestEnvironmentParser(unittest.TestCase):
         "EnvironmentParser should parse an environment variable"
         parser = EnvironmentParser()
         parser.add_env_var('HOME', 'fooprogram.env', 'home')
-        os.environ = { 'HOME': '/tmp' }
-        values = parser.render()
+        environ = { 'HOME': '/tmp' }
+        values = parser.render(environ)
         self.assertEqual(values.get_field('fooprogram.env', 'home'), '/tmp')
 
     def test_optional_envvar(self):
         "EnvironmentParser should parse a missing environment variable"
         parser = EnvironmentParser()
         parser.add_env_var('HOME', 'fooprogram.env', 'home', required=False)
-        os.environ = {}
-        values = parser.render()
+        environ = {}
+        values = parser.render(environ)
         self.assertRaises(KeyError, values.get_field, 'fooprogram.env', 'home')
 
     def test_missing_required_envvar(self):
         "EnvironmentParser should raise ConfigureError if required environment variable is missing"
         parser = EnvironmentParser()
-        os.environ = {}
+        environ = {}
         parser.add_env_var('MISSING', 'fooprogram.env', 'missing', required=True)
-        self.assertRaises(ConfigureError, parser.render)
+        self.assertRaises(ConfigureError, parser.render, environ)

@@ -21,17 +21,14 @@ class EnvironmentParser(object):
         """
         self._envvars[envvar] = (make_path(path),name,required)
  
-    def render(self, environ=None):
+    def render(self, environ):
         """
         :returns:
         :rtype: pesky.settings.valuetree.ValueTree
         """
-        if environ is None:
-            environ = os.environ.copy()
-        else:
-            environ = environ.copy()
+        environ = environ.copy()
         values = ValueTree()
-        # parse sections 
+        # parse sections
         for envvar,(path,name,required) in self._envvars.items():
             if envvar in environ:
                 values.put_container(path)

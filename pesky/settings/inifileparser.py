@@ -16,18 +16,6 @@ class IniFileParser(object):
     def __init__(self):
         self._sections = {}
         self._options = {}
-        self.ini_path = None
-        self.required = False
-
-    def set_ini_path(self, ini_path):
-        """
-        """
-        self.ini_path = ini_path
-
-    def set_required(self, required):
-        """
-        """
-        self.required = required
 
     def add_section(self, section, path, required=False):
         """
@@ -39,18 +27,18 @@ class IniFileParser(object):
         """
         self._options[(section,option)] = (make_path(path),name,required)
 
-    def render(self):
+    def render(self, ini_path, required):
         """
         :returns:
         :rtype: pesky.settings.valuetree.ValueTree
         """
         values = ValueTree()
         try:
-            if self.ini_path is None:
+            if ini_path is None:
                 raise Exception("no configuration file was specified")
-            with open(self.ini_path, 'r') as f:
+            with open(ini_path, 'r') as f:
                 config = ConfigParser()
-                config.read_file(f, self.ini_path)
+                config.read_file(f, ini_path)
                 # parse sections
                 for section,(path,required) in self._sections.items():
                     if config.has_section(section):
@@ -68,6 +56,6 @@ class IniFileParser(object):
                         raise ConfigureError("missing required option %s => %s" % (section, option))
                 return values
         except EnvironmentError as e:
-            if self.required:
+            if required:
                 raise ConfigureError("failed to read configuration: %s" % e.strerror)
             return values
