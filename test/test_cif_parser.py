@@ -45,6 +45,16 @@ toplevel:
 field3 = value3
 """
 
+    list_continuation_data = \
+"""
+toplevel:
+    field1 = list item 1
+           , list item 2
+           , list item 3
+    field2 = value2
+field3 = value3
+"""
+
     def test_load_multi_line(self):
         "CIF should parse a multi-line document"
         pesky.settings.cifparser.parser.debugs(self.multi_line_data)
@@ -75,5 +85,15 @@ field3 = value3
         parser = pesky.settings.cifparser.CifParser()
         values = parser.render(io.StringIO(self.value_continuation_data))
         self.assertEquals(values.get_field(make_path('toplevel'), 'field1'), ' first line\n second line\n third line')
+        self.assertEquals(values.get_field(make_path('toplevel'), 'field2'), ' value2')
+        self.assertEquals(values.get_field(ROOT_PATH, 'field3'), ' value3')
+
+    def test_load_list_continuation_data(self):
+        "CIF should parse a multi-line document with list continuations"
+        pesky.settings.cifparser.parser.debugs(self.list_continuation_data)
+        parser = pesky.settings.cifparser.CifParser()
+        values = parser.render(io.StringIO(self.list_continuation_data))
+        self.assertListEqual(values.get_field_list(make_path('toplevel'), 'field1'),
+                             [' list item 1', ' list item 2', ' list item 3'])
         self.assertEquals(values.get_field(make_path('toplevel'), 'field2'), ' value2')
         self.assertEquals(values.get_field(ROOT_PATH, 'field3'), ' value3')
