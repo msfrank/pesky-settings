@@ -335,9 +335,9 @@ def load(obj):
                 _load(value, container.get_container(path))
             elif isinstance(value, list):
                 for item in value:
-                    container.append_field(path, name, item)
+                    container.append_field(ROOT_PATH, name, item)
             elif isinstance(value, str):
-                container.put_field(path, name, value)
+                container.put_field(ROOT_PATH, name, value)
             else:
                 raise ValueError()
     _load(obj, values)
