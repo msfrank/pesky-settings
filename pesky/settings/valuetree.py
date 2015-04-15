@@ -3,7 +3,7 @@
 # This file is part of Pesky.  Pesky is BSD-licensed software;
 # for copyright information see the LICENSE file.
 
-from pesky.settings.path import Path, make_path
+from pesky.settings.path import Path, make_path, ROOT_PATH
 
 class ValueTree(object):
     """
@@ -74,6 +74,22 @@ class ValueTree(object):
                 raise KeyError()
         return container
 
+    def get_container_fields(self, path):
+        """
+
+        :param path:
+        :type path: Path
+        :return:
+        :rtype: ValueTree
+        :raises ValueError: A component of path is a field name.
+        :raises KeyError: A component of path doesn't exist.
+        """
+        container = self.get_container(path)
+        fields = ValueTree()
+        for name,value in container._values.items():
+            fields.put(ROOT_PATH, name, value)
+        return fields
+
     def contains_container(self, path):
         """
         Returns True if a container exists at the specified path,
@@ -90,17 +106,51 @@ class ValueTree(object):
         except KeyError:
             return False
 
+    def put(self, path, name, value_or_values):
+        """
+
+        :param path:
+        :param name:
+        :param value_or_values:
+        :return:
+        """
+        if isinstance(value_or_values, str):
+            self.put_field(path, name, value_or_values)
+        elif isinstance(value_or_values, list):
+            self.put_field_list(path, name, value_or_values)
+        else:
+            raise ValueError()
+
     def put_field(self, path, name, value):
         """
         Creates a field with the specified name an value at path.  If the
         field already exists, it will be overwritten with the new value.
         """
+        if not isinstance(value, str):
+            raise ValueError()
         path = make_path(path)
         container = self.get_container(path)
         current = self._values.get(name)
         if current is not None and isinstance(current, ValueTree):
             raise TypeError()
         container._values[name] = value
+
+    def put_field_list(self, path, name, values):
+        """
+
+        :param path:
+        :param name:
+        :param values:
+        :return:
+        """
+        if not isinstance(values, list):
+            raise ValueError()
+        path = make_path(path)
+        container = self.get_container(path)
+        current = self._values.get(name)
+        if current is not None and isinstance(current, ValueTree):
+            raise TypeError()
+        container._values[name] = values
 
     def append_field(self, path, name, value):
         """
@@ -238,3 +288,57 @@ class ValueTree(object):
                 else:
                     yield (path, name, value)
         return generator(Path([]), self._values)
+
+def dump(values):
+    """
+    Dump a ValueTree instance, returning its dict representation.
+
+    :param values:
+    :type values: ValueTree
+    :return:
+    :rtype: dict
+    """
+    root = {}
+    def _dump(_values, container):
+        for name,value in _values._values.items():
+            if isinstance(value, ValueTree):
+                container[name] = _dump(value, {})
+            elif isinstance(value, list):
+                items = []
+                for item in value:
+                    if not isinstance(item, str):
+                        raise ValueError()
+                    items.append(item)
+                container[name] = items
+            elif isinstance(value, str):
+                container[name] = value
+            else:
+                raise ValueError()
+        return container
+    return _dump(values, root)
+
+def load(obj):
+    """
+    Load a ValueTree instance from its dict representation.
+
+    :param obj:
+    :type obj: dict
+    :return:
+    :rtype: ValueTree
+    """
+    values = ValueTree()
+    def _load(_obj, container):
+        for name,value in _obj.items():
+            path = make_path(name)
+            if isinstance(value, dict):
+                container.put_container(path)
+                _load(value, container.get_container(path))
+            elif isinstance(value, list):
+                for item in value:
+                    container.append_field(path, name, item)
+            elif isinstance(value, str):
+                container.put_field(path, name, value)
+            else:
+                raise ValueError()
+    _load(obj, values)
+    return values

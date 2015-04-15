@@ -24,6 +24,8 @@ class Path(object):
     def __add__(self, other):
         return Path(self.segments + make_path(other).segments)
 
+ROOT_PATH = Path([])
+
 pp.quotedString.setParseAction(pp.removeQuotes)
 pathsegment_parser = pp.Word(pp.alphanums) ^ pp.quotedString
 path_parser = pp.ZeroOrMore(pathsegment_parser + pp.Literal('.')) + pathsegment_parser
@@ -39,7 +41,7 @@ def make_path(*path_or_str_or_segments):
     :rtype: pesky.settings.path.Path
     """
     if len(path_or_str_or_segments) == 0:
-        return Path([])
+        return ROOT_PATH
     elif len(path_or_str_or_segments) == 1:
         single_item = path_or_str_or_segments[0]
         if isinstance(single_item, Path):
@@ -52,4 +54,4 @@ def make_path(*path_or_str_or_segments):
         raise TypeError()
     else:
         segments = path_or_str_or_segments
-        return sum(map(lambda x: make_path(x), segments), Path([]))
+        return sum(map(lambda x: make_path(x), segments), ROOT_PATH)

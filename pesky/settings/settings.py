@@ -34,7 +34,7 @@ class Settings(object):
         self.subusage = 'Available subcommands:'
         # initialize the environment parser
         self.environmentparser = EnvironmentParser()
-        self.environmentparser.add_env_var('CONFIG_FILE_PATH', 'pesky.settings', 'config_file', required=False)
+        self.environmentparser.add_env('CONFIG_FILE_PATH', 'pesky.settings', 'config_file', required=False)
         # initialize the arg parser
         self.argparser = ArgParser()
         self.argparser.add_option('c', 'config-file', 'pesky.settings', 'config_file',
@@ -51,7 +51,7 @@ class Settings(object):
         self.accumulator = MergeAccumulator(ReplaceStrategy())
 
     def add_env_var(self, envvar, path, name, required=False):
-        self.environmentparser.add_env_var(envvar, path, name, required)
+        self.environmentparser.add_env(envvar, path, name, required)
 
     def add_arg_option(self, shortoption, longoption, path, name, help=None, metavar=None, recurring=False):
         self.argparser.add_option(shortoption, longoption, path, name, help, metavar, recurring)

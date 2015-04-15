@@ -16,7 +16,7 @@ class EnvironmentParser(object):
     def __init__(self):
         self._envvars = {}
 
-    def add_env_var(self, envvar, path, name, required=False):
+    def add_env(self, envvar, path, name, required=False):
         """
         """
         self._envvars[envvar] = (make_path(path),name,required)
