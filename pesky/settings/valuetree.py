@@ -74,20 +74,37 @@ class ValueTree(object):
                 raise KeyError()
         return container
 
+    def get_container_containers(self, path):
+        """
+        :param path:
+        :type path: Path
+        :return:
+        :rtype: dict
+        :raises ValueError: A component of path is a field name.
+        :raises KeyError: A component of path doesn't exist.
+        """
+        container = self.get_container(path)
+        containers = {}
+        for name,value in container._values.items():
+            if isinstance(value, ValueTree):
+                containers[name] = value
+        return containers
+
     def get_container_fields(self, path):
         """
 
         :param path:
         :type path: Path
         :return:
-        :rtype: ValueTree
+        :rtype: dict
         :raises ValueError: A component of path is a field name.
         :raises KeyError: A component of path doesn't exist.
         """
         container = self.get_container(path)
-        fields = ValueTree()
+        fields = {}
         for name,value in container._values.items():
-            fields.put(ROOT_PATH, name, value)
+            if isinstance(value, str) or isinstance(value, list):
+                fields[name] = value
         return fields
 
     def contains_container(self, path):
